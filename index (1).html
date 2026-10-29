@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Librería Arcángel Gabriel</title>
 
-    <!-- Bootstrap 5.3 CSS (Framework oficial del curso) -->
+    <!-- Bootstrap 5.3 CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -17,6 +17,13 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
 
+    <!-- Librería Leaflet.js para Mapa Interactivo (API externa de geolocalización) -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="css/styles.css" />
   </head>
@@ -25,7 +32,7 @@
     <header class="sticky-top">
       <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container">
-          <a class="navbar-brand d-flex items-center gap-2 font-bold" href="#">
+          <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="#">
             <i class="fa-solid fa-book-open text-warning fs-4"></i>
             <span>Arcángel Gabriel</span>
           </a>
@@ -54,8 +61,9 @@
                 <a class="nav-link" href="#contacto">Contacto</a>
               </li>
             </ul>
+            <!-- Redirección al Login seguro para autenticación -->
             <a
-              href="dashboard.html"
+              href="login.html"
               class="btn btn-warning text-dark fw-bold btn-sm"
             >
               <i class="fa-solid fa-user-gear me-1"></i> Panel Admin
@@ -69,7 +77,7 @@
     <section id="inicio" class="bg-primary text-white py-5">
       <div class="container text-center py-4">
         <span
-          class="badge bg-light text-primary uppercase mb-3 px-3 py-2 rounded-pill fw-semibold"
+          class="badge bg-light text-primary text-uppercase mb-3 px-3 py-2 rounded-pill fw-semibold"
         >
           Frente a la I.E. 6024 José María Arguedas
         </span>
@@ -110,7 +118,6 @@
         </p>
       </div>
 
-      <!-- Rejilla de Bootstrap: col-12 en móviles, col-sm-6 en tablets, col-lg-3 en desktop -->
       <div class="row g-4">
         <!-- Producto 1 -->
         <div class="col-12 col-sm-6 col-lg-3">
@@ -237,7 +244,7 @@
       </div>
     </section>
 
-    <!-- 4. UBICACIÓN Y CONTACTO -->
+    <!-- 4. UBICACIÓN Y CONTACTO CON MAPA INTERACTIVO -->
     <section id="ubicacion" class="bg-body-tertiary py-5">
       <div class="container">
         <div class="row align-items-center g-4">
@@ -267,15 +274,10 @@
             </div>
           </div>
 
+          <!-- Mapa Dinámico Interactivo reemplazando el Iframe -->
           <div class="col-12 col-md-6">
             <div class="card p-2 shadow-sm border-0">
-              <iframe
-                class="w-100 rounded"
-                style="height: 280px"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3900.283120154924!2d-76.953500!3d-12.160500!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9105b81012345678%3A0x123456789abcdef!2sVilla%20Maria%20del%20Triunfo!5e0!3m2!1ses-419!2spe!4v1680000000000"
-                allowfullscreen=""
-                loading="lazy"
-              ></iframe>
+              <div id="mapaInteractivo" style="height: 280px; width: 100%;" class="rounded"></div>
             </div>
           </div>
         </div>
@@ -293,7 +295,7 @@
 
       <div class="card shadow-sm border-0 p-4">
         <form id="contactForm">
-          <!-- Alerta dinámico para errores/éxito (Bootstrap Alert) -->
+          <!-- Alerta dinámico para errores/éxito -->
           <div id="formAlert" class="alert d-none mb-3" role="alert"></div>
 
           <div class="mb-3">
@@ -373,8 +375,31 @@
       </div>
     </footer>
 
-    <!-- Bootstrap 5 JS Bundle con Popper (Necesario para modales, navbar responsive, etc.) -->
+    <!-- Bootstrap 5 JS Bundle con Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script para Inicializar el Mapa Interactivo (OpenStreetMap + Leaflet) -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // Coordenadas estratégicas de Villa María del Triunfo
+        const lat = -12.1605;
+        const lng = -76.9535;
+
+        // Inicializar mapa centrado en la ubicación
+        const map = L.map('mapaInteractivo').setView([lat, lng], 16);
+
+        // Capa de mosaico de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Marcador con Popup en la ubicación exacta
+        L.marker([lat, lng]).addTo(map)
+          .bindPopup('<b>Librería Arcángel Gabriel</b><br>Frente a I.E. 6024 José María Arguedas')
+          .openPopup();
+      });
+    </script>
 
     <!-- Scripts del Proyecto -->
     <script src="js/validation.js"></script>
