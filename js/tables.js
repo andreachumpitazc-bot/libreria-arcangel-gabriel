@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!productTableBody) return;
 
   // Endpoint de la API REST para la gestión de productos
-  const API_URL = "http://localhost:3000/api/productos";
+  const API_URL = "https://libreria-arcangel-gabriel.onrender.com/api/productos";
   let productos = []; // Estado local en memoria para búsquedas y filtros rápidos
 
   // --------------------------------------------------------
@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <tr>
           <td colspan="7" class="text-center text-danger py-3">
             <i class="fa-solid fa-triangle-exclamation me-2"></i>
-            No se pudo conectar con el servidor backend (http://localhost:3000).
+            No se pudo conectar con el servidor backend (${API_URL}).
           </td>
         </tr>`;
     }
