@@ -1,5 +1,5 @@
 // ========================================================
-// GESTIÓN DE INVENTARIO Y TABLA DINÁMICA DE PRODUCTOS
+// GESTIÓN DE INVENTARIO Y TABLA DINÁMICA DE PRODUCTOS (API REST)
 // ========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -12,59 +12,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!productTableBody) return;
 
-  // Catálogo inicial con propiedad stock
-  const productosIniciales = [
-    {
-      id: 1,
-      categoria: "Papelería",
-      nombre: "Cuaderno Universitario A4",
-      detalle: "100 hojas cuadriculadas Standford",
-      precio: "S/ 6.50",
-      stock: 45,
-    },
-    {
-      id: 2,
-      categoria: "Packs",
-      nombre: "Lista Escolar Completa",
-      detalle: "Primaria / Secundaria personalizada",
-      precio: "Cotizar",
-      stock: 2,
-    },
-    {
-      id: 3,
-      categoria: "Servicio",
-      nombre: "Impresiones y Copias",
-      detalle: "Blanco/Negro y Color",
-      precio: "S/ 0.20",
-      stock: 100,
-    },
-    {
-      id: 4,
-      categoria: "Arte",
-      nombre: "Set de Témperas y Pinceles",
-      detalle: "Kit Faber Castell 12 colores",
-      precio: "S/ 12.00",
-      stock: 3,
-    },
-  ];
+  // Endpoint de la API REST para la gestión de productos
+  const API_URL = "http://localhost:3000/api/productos";
+  let productos = []; // Estado local en memoria para búsquedas y filtros rápidos
 
-  // Leer de localStorage
-  let productos = JSON.parse(localStorage.getItem("productos_inventario"));
-
-  // Reiniciar si no existen datos válidos
-  if (
-    !productos ||
-    productos.length === 0 ||
-    productos[0].stock === undefined
-  ) {
-    productos = productosIniciales;
-    localStorage.setItem("productos_inventario", JSON.stringify(productos));
+  // --------------------------------------------------------
+  // 1. OBTENER Y RENDERIZAR PRODUCTOS DESDE LA BD (GET)
+  // --------------------------------------------------------
+  async function obtenerProductos() {
+    try {
+      const response = await fetch(API_URL);
+      if (!response.ok) throw new Error("Error al consultar la API REST");
+      
+      productos = await response.json();
+      renderizarTabla(productos);
+    } catch (error) {
+      console.error("Error cargando el inventario:", error);
+      productTableBody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-danger py-3">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+            No se pudo conectar con el servidor backend (http://localhost:3000).
+          </td>
+        </tr>`;
+    }
   }
 
-  // Renderizar la tabla y actualizar indicadores
   function renderizarTabla(lista) {
     productTableBody.innerHTML = "";
 
+    // Actualizar KPIs/Contadores del Dashboard
     if (totalProductosCount) {
       totalProductosCount.textContent = productos.length;
     }
@@ -76,9 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (lista.length === 0) {
       productTableBody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-3">No se encontraron productos.</td>
-                </tr>`;
+        <tr>
+          <td colspan="7" class="text-center text-muted py-3">No se encontraron productos.</td>
+        </tr>`;
       return;
     }
 
@@ -90,30 +67,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
-                <td class="fw-bold text-muted">#${prod.id}</td>
-                <td><span class="badge bg-primary-subtle text-primary">${prod.categoria}</span></td>
-                <td class="fw-bold text-dark">${prod.nombre}</td>
-                <td class="small text-secondary">${prod.detalle}</td>
-                <td>${stockBadge}</td>
-                <td class="fw-bold ${prod.precio === "Cotizar" ? "text-success" : "text-dark"}">${prod.precio}</td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary btn-editar me-1" 
-                            data-id="${prod.id}" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#modalEditarProducto" 
-                            title="Editar Producto">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-eliminar" data-id="${prod.id}" title="Eliminar">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </td>
-            `;
+        <td class="fw-bold text-muted">#${prod.id}</td>
+        <td><span class="badge bg-primary-subtle text-primary">${prod.categoria}</span></td>
+        <td class="fw-bold text-dark">${prod.nombre}</td>
+        <td class="small text-secondary">${prod.detalle}</td>
+        <td>${stockBadge}</td>
+        <td class="fw-bold ${prod.precio === "Cotizar" ? "text-success" : "text-dark"}">${prod.precio}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-primary btn-editar me-1" 
+                  data-id="${prod.id}" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#modalEditarProducto" 
+                  title="Editar Producto">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger btn-eliminar" data-id="${prod.id}" title="Eliminar">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </td>
+      `;
       productTableBody.appendChild(tr);
     });
   }
 
-  // 1. CARGAR DATOS EN EL FORMULARIO DE EDICIÓN AL HACER CLIC EN EL LÁPIZ
+  // --------------------------------------------------------
+  // 2. CARGAR DATOS EN EL MODAL AL EDITAR
+  // --------------------------------------------------------
   productTableBody.addEventListener("click", (e) => {
     const btnEditar = e.target.closest(".btn-editar");
     if (btnEditar) {
@@ -131,53 +110,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 2. GUARDAR LOS CAMBIOS EDITADOS (TODA LA FILA)
-  if (formEditarProducto) {
-    formEditarProducto.addEventListener("submit", (e) => {
-      e.preventDefault();
-
-      const id = parseInt(document.getElementById("editProdId").value);
-      const index = productos.findIndex((p) => p.id === id);
-
-      if (index !== -1) {
-        // Actualizar todos los campos
-        productos[index].nombre = document
-          .getElementById("editProdNombre")
-          .value.trim();
-        productos[index].categoria =
-          document.getElementById("editProdCategoria").value;
-        productos[index].stock =
-          parseInt(document.getElementById("editProdStock").value) || 0;
-        productos[index].precio = document
-          .getElementById("editProdPrecio")
-          .value.trim();
-        productos[index].detalle = document
-          .getElementById("editProdDetalle")
-          .value.trim();
-
-        // Guardar en Web Storage y actualizar tabla
-        localStorage.setItem("productos_inventario", JSON.stringify(productos));
-        renderizarTabla(productos);
-
-        // Cerrar modal
-        const modalCloseBtn = document.querySelector(
-          "#modalEditarProducto .btn-close",
-        );
-        if (modalCloseBtn) modalCloseBtn.click();
-      }
-    });
-  }
-
-  // 3. REGISTRAR UN NUEVO PRODUCTO
+  // --------------------------------------------------------
+  // 3. REGISTRAR UN NUEVO PRODUCTO EN LA BD (POST)
+  // --------------------------------------------------------
   if (formAgregarProducto) {
-    formAgregarProducto.addEventListener("submit", (e) => {
+    formAgregarProducto.addEventListener("submit", async (e) => {
       e.preventDefault();
-
-      const nuevoId =
-        productos.length > 0 ? Math.max(...productos.map((p) => p.id)) + 1 : 1;
 
       const nuevoProducto = {
-        id: nuevoId,
         nombre: document.getElementById("prodNombre").value.trim(),
         categoria: document.getElementById("prodCategoria").value,
         stock: parseInt(document.getElementById("prodStock").value) || 0,
@@ -185,43 +125,110 @@ document.addEventListener("DOMContentLoaded", () => {
         detalle: document.getElementById("prodDetalle").value.trim(),
       };
 
-      productos.push(nuevoProducto);
-      localStorage.setItem("productos_inventario", JSON.stringify(productos));
-      renderizarTabla(productos);
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(nuevoProducto),
+        });
 
-      formAgregarProducto.reset();
-      const modalCloseBtn = document.querySelector(
-        "#modalAgregarProducto .btn-close",
-      );
-      if (modalCloseBtn) modalCloseBtn.click();
+        if (!response.ok) throw new Error("Error al guardar el producto");
+
+        formAgregarProducto.reset();
+
+        // Cerrar modal de Bootstrap
+        const modalElement = document.getElementById("modalAgregarProducto");
+        const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+        modalInstance.hide();
+
+        // Recargar lista actualizada desde el servidor
+        await obtenerProductos();
+      } catch (error) {
+        console.error("Error al registrar producto:", error);
+        alert("No se pudo guardar el producto. Revisa la conexión con el backend.");
+      }
     });
   }
 
-  // 4. BUSCADOR
+  // --------------------------------------------------------
+  // 4. GUARDAR CAMBIOS EDITADOS EN LA BD (PUT)
+  // --------------------------------------------------------
+  if (formEditarProducto) {
+    formEditarProducto.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById("editProdId").value;
+      const productoActualizado = {
+        nombre: document.getElementById("editProdNombre").value.trim(),
+        categoria: document.getElementById("editProdCategoria").value,
+        stock: parseInt(document.getElementById("editProdStock").value) || 0,
+        precio: document.getElementById("editProdPrecio").value.trim(),
+        detalle: document.getElementById("editProdDetalle").value.trim(),
+      };
+
+      try {
+        const response = await fetch(`${API_URL}/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productoActualizado),
+        });
+
+        if (!response.ok) throw new Error("Error al actualizar producto");
+
+        // Cerrar modal de Bootstrap
+        const modalElement = document.getElementById("modalEditarProducto");
+        const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+        modalInstance.hide();
+
+        // Recargar lista actualizada desde la BD
+        await obtenerProductos();
+      } catch (error) {
+        console.error("Error al actualizar producto:", error);
+        alert("No se pudo guardar los cambios del producto.");
+      }
+    });
+  }
+
+  // --------------------------------------------------------
+  // 5. ELIMINAR UN PRODUCTO DE LA BD (DELETE)
+  // --------------------------------------------------------
+  productTableBody.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".btn-eliminar");
+    if (btn) {
+      const id = btn.getAttribute("data-id");
+      if (confirm("¿Deseas eliminar este producto del inventario de forma permanente?")) {
+        try {
+          const response = await fetch(`${API_URL}/${id}`, {
+            method: "DELETE",
+          });
+
+          if (!response.ok) throw new Error("Error al eliminar producto");
+
+          // Recargar lista actualizada desde la BD
+          await obtenerProductos();
+        } catch (error) {
+          console.error("Error al eliminar producto:", error);
+          alert("No se pudo eliminar el producto.");
+        }
+      }
+    }
+  });
+
+  // --------------------------------------------------------
+  // 6. BUSCADOR EN TIEMPO REAL (FILTRADO LOCAL)
+  // --------------------------------------------------------
   if (searchInput) {
     searchInput.addEventListener("keyup", (e) => {
       const termino = e.target.value.toLowerCase();
       const filtrados = productos.filter(
         (p) =>
           p.nombre.toLowerCase().includes(termino) ||
-          p.categoria.toLowerCase().includes(termino),
+          p.categoria.toLowerCase().includes(termino)
       );
       renderizarTabla(filtrados);
     });
   }
 
-  // 5. ELIMINAR
-  productTableBody.addEventListener("click", (e) => {
-    const btn = e.target.closest(".btn-eliminar");
-    if (btn) {
-      const id = parseInt(btn.getAttribute("data-id"));
-      if (confirm("¿Deseas eliminar este producto del inventario?")) {
-        productos = productos.filter((p) => p.id !== id);
-        localStorage.setItem("productos_inventario", JSON.stringify(productos));
-        renderizarTabla(productos);
-      }
-    }
-  });
-
-  renderizarTabla(productos);
+  // Cargar productos al iniciar la vista
+  obtenerProductos();
 });
