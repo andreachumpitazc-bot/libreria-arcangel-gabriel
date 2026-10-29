@@ -1,5 +1,5 @@
 // ========================================================
-// VALIDACIÓN DEL FORMULARIO DE CONTACTO Y COTIZACIÓN
+// VALIDACIÓN DEL FORMULARIO DE CONTACTO Y COTIZACIÓN (API REST)
 // ========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const inputEmail = document.getElementById("email");
   const inputMensaje = document.getElementById("mensaje");
 
-  contactForm.addEventListener("submit", (e) => {
+  contactForm.addEventListener("submit", async (e) => {
     e.preventDefault(); // Evitamos que la página se recargue
 
     // Captura de valores limpios
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setInvalid(inputNombre);
       showAlert(
         "Por favor, ingresa tu nombre completo (mínimo 3 caracteres).",
-        "danger",
+        "danger"
       );
       return;
     }
@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setInvalid(inputTelefono);
       showAlert(
         "Por favor, ingresa un número de celular válido de 9 dígitos (ej. 999888777).",
-        "danger",
+        "danger"
       );
       return;
     }
@@ -71,46 +71,51 @@ document.addEventListener("DOMContentLoaded", () => {
       setInvalid(inputMensaje);
       showAlert(
         "Por favor, escribe tu consulta o lista de útiles a cotizar.",
-        "danger",
+        "danger"
       );
       return;
     }
     setValid(inputMensaje);
 
-    // --- SI TODO ES VÁLIDO: PERSISTENCIA Y UX ---
+    // --- SI TODO ES VÁLIDO: ENVÍO HTTP POST A LA API REST ---
     const nuevaSolicitud = {
-      id: Date.now(),
       nombre: nombre,
       telefono: telefono,
       email: email || "No especificado",
       mensaje: mensaje,
-      fecha: new Date().toLocaleString("es-PE"),
     };
 
-    // Guardar registro en localStorage usando JSON (Sesión 06 y 07)
-    guardarSolicitudStorage(nuevaSolicitud);
+    try {
+      await enviarSolicitudBackend(nuevaSolicitud);
 
-    // Notificación de éxito (Bootstrap Alert)
-    showAlert(
-      "¡Solicitud enviada con éxito! Nos pondremos en contacto contigo a la brevedad.",
-      "success",
-    );
+      // Notificación de éxito
+      showAlert(
+        "¡Solicitud enviada con éxito! Nos pondremos en contacto contigo a la brevedad.",
+        "success"
+      );
 
-    // Limpiar campos y remover estilos de validación tras envío exitoso
-    contactForm.reset();
-    setTimeout(
-      () =>
-        resetValidationState([
-          inputNombre,
-          inputTelefono,
-          inputEmail,
-          inputMensaje,
-        ]),
-      3000,
-    );
+      // Limpiar campos y remover estilos de validación tras envío exitoso
+      contactForm.reset();
+      setTimeout(
+        () =>
+          resetValidationState([
+            inputNombre,
+            inputTelefono,
+            inputEmail,
+            inputMensaje,
+          ]),
+        3000
+      );
+    } catch (error) {
+      console.error("Error al enviar la solicitud:", error);
+      showAlert(
+        "No se pudo conectar con el servidor backend para registrar tu solicitud.",
+        "danger"
+      );
+    }
   });
 
-  // --- FUNCIONES AUXILIARES DE UX/UI (Sesión 04 - Bootstrap) ---
+  // --- FUNCIONES AUXILIARES DE UX/UI ---
   function showAlert(message, type) {
     alertBox.className = `alert alert-${type} mb-3`;
     alertBox.textContent = message;
@@ -135,14 +140,20 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.forEach((el) => el.classList.remove("is-invalid", "is-valid"));
   }
 
-  // --- PERSISTENCIA WEB STORAGE (Sesión 06 y 07 - JSON & localStorage) ---
-  function guardarSolicitudStorage(solicitud) {
-    const listaExistente =
-      JSON.parse(localStorage.getItem("solicitudes_contacto")) || [];
-    listaExistente.push(solicitud);
-    localStorage.setItem(
-      "solicitudes_contacto",
-      JSON.stringify(listaExistente),
-    );
+  // --- PETICIÓN HTTP POST AL BACKEND ---
+  async function enviarSolicitudBackend(solicitud) {
+    const response = await fetch("http://localhost:3000/api/solicitudes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(solicitud),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error en el servidor backend al guardar la solicitud");
+    }
+
+    return await response.json();
   }
 });
