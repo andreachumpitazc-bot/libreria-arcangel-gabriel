@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!messagesTableBody) return;
 
-  const API_URL = "http://localhost:3000/api/solicitudes";
+  const API_URL = "https://libreria-arcangel-gabriel.onrender.com/api/solicitudes";
 
   async function cargarSolicitudes() {
     try {
@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <tr>
           <td colspan="5" class="text-center text-danger py-4">
             <i class="fa-solid fa-triangle-exclamation me-2"></i>
-            No se pudo conectar con el servidor backend (http://localhost:3000/api/solicitudes).
+            No se pudo conectar con el servidor backend (${API_URL}).
           </td>
         </tr>`;
     }
